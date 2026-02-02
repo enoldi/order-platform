@@ -1,0 +1,16 @@
+// apps/notification-service/build.gradle.kts
+
+plugins {
+  id("org.springframework.boot")
+  id("io.spring.dependency-management")
+}
+
+dependencies {
+  implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("org.springframework.boot:spring-boot-starter-amqp")
+
+  runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+  testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+tasks.bootJar { archiveFileName.set("notification-service.jar") }

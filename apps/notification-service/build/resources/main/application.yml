@@ -1,0 +1,17 @@
+#  apps/notification-service/src/main/resources/application.yml
+server:
+  port: 8084
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+

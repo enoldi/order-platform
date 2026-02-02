@@ -1,0 +1,31 @@
+# Gradle build artifacts
+**/build/
+.gradle/
+**/out/
+.classpath
+.project
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Git
+.git/
+.gitignore
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Kubernetes
+kind-config.yaml
+
+# Gradle wrapper jar (keep gradlew scripts)
+gradle/wrapper/gradle-wrapper.jar
+
+# OS specific
+.DS_Store
+Thumbs.db

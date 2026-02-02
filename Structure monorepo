@@ -1,0 +1,37 @@
+order-platform/
+  settings.gradle.kts
+  build.gradle.kts
+
+  apps/
+    gateway/
+      build.gradle.kts
+      src/main/java/com/demo/gateway/GatewayApplication.java
+      src/main/resources/application.yml
+
+    order-service/
+      build.gradle.kts
+      src/main/java/com/demo/order/OrderServiceApplication.java
+      src/main/java/com/demo/order/api/OrderController.java
+      src/main/java/com/demo/order/messaging/RabbitConfig.java
+      src/main/resources/application.yml
+
+    payment-service/
+      build.gradle.kts
+      src/main/java/com/demo/payment/PaymentServiceApplication.java
+      src/main/java/com/demo/payment/messaging/PaymentConsumer.java
+      src/main/java/com/demo/payment/messaging/RabbitConfig.java
+      src/main/resources/application.yml
+
+    inventory-service/
+      build.gradle.kts
+      src/main/java/com/demo/inventory/InventoryServiceApplication.java
+      src/main/java/com/demo/inventory/messaging/InventoryConsumer.java
+      src/main/java/com/demo/inventory/messaging/RabbitConfig.java
+      src/main/resources/application.yml
+
+    notification-service/
+      build.gradle.kts
+      src/main/java/com/demo/notification/NotificationServiceApplication.java
+      src/main/java/com/demo/notification/messaging/NotificationConsumer.java
+      src/main/resources/application.yml
+

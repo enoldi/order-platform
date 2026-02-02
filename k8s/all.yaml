@@ -1,0 +1,494 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-secrets
+  namespace: demo
+type: Opaque
+stringData:
+  RABBIT_USER: guest
+  RABBIT_PASS: guest
+
+  ORDER_DB_USER: order
+  ORDER_DB_PASS: order
+
+  INVENTORY_DB_USER: inventory
+  INVENTORY_DB_PASS: inventory
+
+  PAYMENT_DB_USER: payment
+  PAYMENT_DB_PASS: payment
+---
+# ---------------- RabbitMQ ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: rabbitmq }
+  template:
+    metadata:
+      labels: { app: rabbitmq }
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management
+          ports:
+            - { containerPort: 5672 }
+            - { containerPort: 15672 }
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_USER } }
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_PASS } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: demo
+spec:
+  selector: { app: rabbitmq }
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: mgmt
+      port: 15672
+      targetPort: 15672
+---
+# ---------------- Postgres: Order ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-postgres
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: order-postgres }
+  template:
+    metadata:
+      labels: { app: order-postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - { containerPort: 5432 }
+          env:
+            - { name: POSTGRES_DB, value: orderdb }
+            - name: POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: ORDER_DB_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: ORDER_DB_PASS } }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-postgres
+  namespace: demo
+spec:
+  selector: { app: order-postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# ---------------- Postgres: Inventory ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-postgres
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory-postgres }
+  template:
+    metadata:
+      labels: { app: inventory-postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - { containerPort: 5432 }
+          env:
+            - { name: POSTGRES_DB, value: inventorydb }
+            - name: POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: INVENTORY_DB_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: INVENTORY_DB_PASS } }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-postgres
+  namespace: demo
+spec:
+  selector: { app: inventory-postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# ---------------- Postgres: Payment ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-postgres
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payment-postgres }
+  template:
+    metadata:
+      labels: { app: payment-postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - { containerPort: 5432 }
+          env:
+            - { name: POSTGRES_DB, value: paymentdb }
+            - name: POSTGRES_USER
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: PAYMENT_DB_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: PAYMENT_DB_PASS } }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-postgres
+  namespace: demo
+spec:
+  selector: { app: payment-postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# ---------------- Apps: Order ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: order-service }
+  template:
+    metadata:
+      labels: { app: order-service }
+    spec:
+      containers:
+        - name: app
+          image: demo/order-service:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8081 }
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://order-postgres:5432/orderdb
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: ORDER_DB_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: ORDER_DB_PASS } }
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_USER } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_PASS } }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8081 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8081 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: demo
+spec:
+  selector: { app: order-service }
+  ports:
+    - port: 8081
+      targetPort: 8081
+---
+# ---------------- Apps: Payment ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: payment-service }
+  template:
+    metadata:
+      labels: { app: payment-service }
+    spec:
+      containers:
+        - name: app
+          image: demo/payment-service:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8082 }
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://payment-postgres:5432/paymentdb
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: PAYMENT_DB_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: PAYMENT_DB_PASS } }
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_USER } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_PASS } }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: demo
+spec:
+  selector: { app: payment-service }
+  ports:
+    - port: 8082
+      targetPort: 8082
+---
+# ---------------- Apps: Inventory ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory-service }
+  template:
+    metadata:
+      labels: { app: inventory-service }
+    spec:
+      containers:
+        - name: app
+          image: demo/inventory-service:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8083 }
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://inventory-postgres:5432/inventorydb
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: INVENTORY_DB_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: INVENTORY_DB_PASS } }
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_USER } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_PASS } }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: demo
+spec:
+  selector: { app: inventory-service }
+  ports:
+    - port: 8083
+      targetPort: 8083
+---
+# ---------------- Apps: Notification ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: notification-service }
+  template:
+    metadata:
+      labels: { app: notification-service }
+    spec:
+      containers:
+        - name: app
+          image: demo/notification-service:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8084 }
+          env:
+            - name: SPRING_RABBITMQ_HOST
+              value: rabbitmq
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_USER } }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: demo-secrets, key: RABBIT_PASS } }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: demo
+spec:
+  selector: { app: notification-service }
+  ports:
+    - port: 8084
+      targetPort: 8084
+---
+# ---------------- Apps: Gateway (NodePort) ----------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: gateway }
+  template:
+    metadata:
+      labels: { app: gateway }
+    spec:
+      containers:
+        - name: app
+          image: demo/gateway:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8080 }
+          # IMPORTANT: gateway doit router vers DNS K8s, pas localhost
+          env:
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
+              value: http://order-service:8081
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
+              value: Path=/orders/**
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
+              value: http://payment-service:8082
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
+              value: Path=/payments/**
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_URI
+              value: http://inventory-service:8083
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0
+              value: Path=/inventory/**
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_URI
+              value: http://notification-service:8084
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_PREDICATES_0
+              value: Path=/notifications/**
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: demo
+spec:
+  type: NodePort
+  selector: { app: gateway }
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
