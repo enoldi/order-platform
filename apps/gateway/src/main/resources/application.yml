@@ -10,19 +10,19 @@ spring:
         - id: order
           uri: http://localhost:8081
           predicates:
-            - Path=/orders/**
+            - Path=/api/v1/orders/**
         - id: payment
           uri: http://localhost:8082
           predicates:
-            - Path=/payments/**
+            - Path=/api/v1/payments/**
         - id: inventory
           uri: http://localhost:8083
           predicates:
-            - Path=/inventory/**
+            - Path=/api/v1/inventory/**
         - id: notification
           uri: http://localhost:8084
           predicates:
-            - Path=/notifications/**
+            - Path=/api/v1/notifications/**
 
 management:
   endpoints:

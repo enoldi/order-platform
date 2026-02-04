@@ -2,6 +2,7 @@ package com.chaars.inventory.controller;
 
 import com.chaars.inventory.repository.ReservationRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/inventory")
+@RequestMapping("/api/v1/inventory")
 public class InventoryQueryController {
 
     private final ReservationRepository reservationRepository;
@@ -20,6 +21,7 @@ public class InventoryQueryController {
 
     public record InventoryStatusResponse(UUID orderId, String reservationId, String status, String reason, String createdAt){}
 
+    @GetMapping("/{orderId}")
     public ResponseEntity<InventoryStatusResponse> getStatus(@PathVariable UUID orderId) {
         return reservationRepository.findByOrderId(orderId)
                 .map(reservation -> new InventoryStatusResponse(
