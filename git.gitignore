@@ -49,3 +49,11 @@ logs/
 ### OS ###
 .DS_Store
 Thumbs.db
+/.gradle/
+/.idea/
+/apps/build/
+/apps/inventory-service/build/
+/apps/notification-service/build/
+/apps/order-service/build/
+/apps/payment-service/build/
+/build/
