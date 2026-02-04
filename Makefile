@@ -102,15 +102,15 @@ hpa-apply:
 .PHONY: demo
 demo:
 	@echo "Post /order via gateway ..."
-	curl -s -X POST http://localhost:8080/orders \
+	curl -s -X POST http://localhost:8080/api/v1/orders \
 	-H "Content-Type: application/json" \
 	-H "X-Correlation-Id: demo-123" \
-	-d '{"CustomerId":"c123", "amount":120.50}' | jq.
+	-d '{"CustomerId":"c123", "amount":120.50}' | jq .
 	@echo ""
 	@echo "Check payment:"
-	@echo "	curl http:localhost:8080/payment/orders/<ORDER_ID>"
+	@echo "	curl http:localhost:8080/api/v1/payments/orders/<ORDER_ID>"
 	@echo "Check inventory:"
-	@echo "	curl http:localhost:8080/inventory/orders/ORDER_ID>"
+	@echo "	curl http:localhost:8080/api/v1/inventory/orders/ORDER_ID>"
 
 
 

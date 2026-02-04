@@ -103,3 +103,62 @@ Définition de requests + limits CPU/memory
     metrics-server requis sur kind pour kubectl top et HPA
 
     hpa.yaml → définit les HPA pour chaque service
+
+## Demo in 2 minutes (local or kind)
+
+## Prerequisites
+- Docker + Docker Compose
+- Java 21 + Gradle
+- (Optional) kind + kubectl
+- (Optional) k6 + jq
+
+### 1) Start infra (RabbitMQ + 3 Postgres)
+```bash
+make up
+
+RabbitMQ UI: http://localhost:15672 (guest/guest)
+```
+### 2) Run services (5 terminals)
+```bash
+make run-order
+make run-payment
+make run-inventory
+make run-notification
+make run-gateway 
+```
+### 3) Create order via gateway (publishes event)
+```bash
+curl -X POST http://localhost:8080/api/v1/orders  \
+    -H "Content-Type:application/json" \
+    -H "X-Correlation-Id: demo-123" \
+    -d '{"costumerId":"c123", "amount":4500.00}' | jq .
+```
+Copy the rerned orderId.
+
+### 4) Verify payment + inventory (idempotence DB outcomes)
+```bash
+curl -s http://localhost:8080/api/v1/payments/orders/<ORDER_ID> | jq .
+curl -s http://localhost:8080/api/v1/inventory/orders/<ORDER_ID> | jq .
+```
+
+### 5) Prove idempotent replay (publish duplicate event)
+
+   1. Open RabbitMQ UI → Exchanges → order.events
+
+   2. Publish with routing key order.created
+
+   3. Reuse the same orderId in the JSON payload
+
+Expected:
+
+- No duplicate rows in DB (unique constraint on order_id)
+
+- Outcome event is republished with header x-idempotent-replay=true
+
+### 6) Swagger UI
+
+- Order service: http://localhost:8081/swagger-ui.html
+
+- Payment service: http://localhost:8082/swagger-ui.html
+
+- Inventory service: http://localhost:8083/swagger-ui.html
