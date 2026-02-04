@@ -451,19 +451,19 @@ spec:
             - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
               value: http://order-service:8081
             - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
-              value: Path=/orders/**
+              value: Path=/api/v1/orders/**
             - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
               value: http://payment-service:8082
             - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
-              value: Path=/payments/**
+              value: Path=/api/v1/payments/**
             - name: SPRING_CLOUD_GATEWAY_ROUTES_2_URI
               value: http://inventory-service:8083
             - name: SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0
-              value: Path=/inventory/**
+              value: Path=/api/v1/inventory/**
             - name: SPRING_CLOUD_GATEWAY_ROUTES_3_URI
               value: http://notification-service:8084
             - name: SPRING_CLOUD_GATEWAY_ROUTES_3_PREDICATES_0
-              value: Path=/notifications/**
+              value: Path=/api/v1/notifications/**
           readinessProbe:
             httpGet: { path: /actuator/health, port: 8080 }
             initialDelaySeconds: 10

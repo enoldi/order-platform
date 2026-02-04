@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/api/v1/payments")
 public class PaymentQueryController {
 
     private final PaymentTransactionRepository paymentTransactionRepository;

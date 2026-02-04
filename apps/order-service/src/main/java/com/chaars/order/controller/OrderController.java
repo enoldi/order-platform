@@ -11,7 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/v1/orders")
 public class OrderController {
 
     public static final String X_CORRELATION_ID = "X-Correlation-Id";
