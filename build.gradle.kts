@@ -17,7 +17,7 @@ allprojects {
 
 dependencyCheck {
   // Fails the build if a vulnerability meets/exceeds this CVSS score
-  failBuildOnCVSS = 11
+  failBuildOnCVSS = 11f
 
   // Scans common dependency configs (works well for Spring Boot projects)
   scanConfigurations = listOf(
