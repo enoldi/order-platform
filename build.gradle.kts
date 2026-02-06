@@ -41,6 +41,7 @@ subprojects {
   configure<DependencyManagementExtension> {
     dependencies {
       dependency("io.netty:netty-codec-http2:4.1.124.Final")
+      dependency("io.netty:netty-handler:4.1.118.Final")
     }
   }
 
