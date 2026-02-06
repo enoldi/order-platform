@@ -27,7 +27,7 @@ dependencyCheck {
     "testRuntimeClasspath"
   )
 
-  suppressionFire = "dependency-check-suppressions.xml"
+  suppressionFile = "dependency-check-suppressions.xml"
 
   // No ReportGenerator import: use strings
   formats = listOf("HTML", "JSON")
