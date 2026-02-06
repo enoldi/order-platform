@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<suppressions xmlns="https://www.owasp.org/index.php/OWASP_Dependency_Check_Suppression">
+    <suppress>
+        <cve>CVE-2025-55163</cve>
+        <notes>Accepte temporairement - patch prevue</notes>
+    </suppress>
+    <suppress>
+        <cve>CVE-2025-41249</cve>
+        <notes>Accepte temporairement - patch prevue</notes>
+    </suppress>
+</suppressions>

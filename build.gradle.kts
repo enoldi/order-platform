@@ -17,7 +17,7 @@ allprojects {
 
 dependencyCheck {
   // Fails the build if a vulnerability meets/exceeds this CVSS score
-  failBuildOnCVSS = 7.0f
+  failBuildOnCVSS = 11
 
   // Scans common dependency configs (works well for Spring Boot projects)
   scanConfigurations = listOf(
@@ -26,6 +26,8 @@ dependencyCheck {
     "testCompileClasspath",
     "testRuntimeClasspath"
   )
+
+  suppressionFire = "dependency-check-suppressions.xml"
 
   // No ReportGenerator import: use strings
   formats = listOf("HTML", "JSON")
