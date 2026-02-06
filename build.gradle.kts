@@ -1,3 +1,5 @@
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
+
 plugins {
   id("org.springframework.boot") apply false
   id("io.spring.dependency-management") apply false
@@ -8,11 +10,7 @@ plugins {
 
 allprojects {
   repositories { mavenCentral() }
-  configurations.configureEach {
-    resolutionStrategy {
-//      force("org.apache.commons:commons-lang3:3.18.0")
-    }
-  }
+  extra["spring-framework.version"] = "6.2.11"
 }
 
 dependencyCheck {
@@ -38,6 +36,13 @@ dependencyCheck {
 
 subprojects {
   apply(plugin = "java")
+  apply(plugin = "io.spring.dependency-management")
+
+  configure<DependencyManagementExtension> {
+    dependencies {
+      dependency("io.netty:netty-codec-http2:4.1.124.Final")
+    }
+  }
 
   group = "com.chaars"
   version = "0.0.1"
